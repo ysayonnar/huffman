@@ -9,7 +9,7 @@ int main(){
 	initTable(&ht);
 
 	scanf("%20s", str);
-
+	
 	for (int i = 0; i < strLength(str); i++) {
 		int currentFrequency = 0;
 		getTable(&ht, str[i], &currentFrequency);
