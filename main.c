@@ -1,31 +1,34 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "src/hashtable/hashtable.h"
-#include "src/utils/utils.h"
 
 int main(){
-	char *str = (char*)malloc(sizeof(char) * 100);
+	FILE *file = fopen("text.txt", "r");
+
+	if(file == NULL){
+		perror("Error while file opening");
+		return 1;
+	}
+
 	HashTable ht;
 	initTable(&ht);
 
-	scanf("%20s", str);
-	
-	for (int i = 0; i < strLength(str); i++) {
-		int currentFrequency = 0;
-		getTable(&ht, str[i], &currentFrequency);
-		insertTable(&ht, str[i], currentFrequency+1);
-
-		printf("%c: %d\n", str[i], str[i]);
+	int ch;
+	while((ch = fgetc(file)) != EOF){
+		int freq = 0;
+		getTable(&ht, ch, &freq);
+		insertTable(&ht, ch, freq+1);
 	}
-
-	printf("\n\n");
 
 	for (int i = 0; i < 256; i++) {
-		int frequency = -1;
-		getTable(&ht, i, &frequency);
-
-		if(frequency != -1){
-			printf("Symbol: %c, ASCII: %d, frequency: %d\n", i, i, frequency);
+		int freq;
+		int isFound = getTable(&ht, i, &freq);
+		if (!isFound){
+			continue;
 		}
+
+		printf("%c: %d\n", i, freq);
 	}
+
+	fclose(file);
 }
