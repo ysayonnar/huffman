@@ -2,7 +2,10 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-// just test
+// TODO: написать Taskfile.yaml чтобы билдить
+// TODO: можно написать быстренькую штуку на го для проверки сжатия и создания
+// файлов с рандомной информацией
+
 int main() {
   FILE *file = fopen("text.txt", "r");
 
