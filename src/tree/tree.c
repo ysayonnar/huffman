@@ -1,5 +1,4 @@
 #include "tree.h"
-#include "stdio.h"
 #include "stdlib.h"
 
 TreeNode *newTreeNode(int value) {

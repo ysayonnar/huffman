@@ -1,12 +1,6 @@
 #ifndef SLICE_H
 #define SLICE_H
 
-typedef struct TreeNode {
-  int value;
-  struct TreeNode *left;
-  struct TreeNode *right;
-} TreeNode;
-
 typedef struct {
   int *values;
   int len;

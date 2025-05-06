@@ -6,6 +6,26 @@
 
 #define PATH_TO_FILE "./huffman-tester/data.txt"
 
+int createCode(TreeNode *node, Slice *slice, int code) {
+  if (node == NULL) {
+    return 0;
+  }
+
+  if (node->value == code) {
+    return 1;
+  }
+
+  if (createCode(node->left, slice, code)) {
+    append(slice, 0);
+    return 1;
+  } else if (createCode(node->right, slice, code)) {
+    append(slice, 1);
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 int main() {
   FILE *file = fopen(PATH_TO_FILE, "r");
 
@@ -49,5 +69,29 @@ int main() {
     node->right = second->value;
 
     insertQueue(&queue, node, first->priority + second->priority);
+  }
+
+  HashTableArray codesTable;
+  initTableArray(&codesTable);
+
+  printf("CHAR\t\tCODE\n");
+  for (int i = 0; i < 256; i++) {
+    int freq;
+    int isFound = getTable(&ht, i, &freq);
+    if (!isFound) {
+      continue;
+    }
+
+    Slice *slice = newSlice();
+    createCode(queue->value, slice, i);
+    insertTableArray(&codesTable, i, slice);
+
+    printf("%3d\t\t", i);
+    for (int j = slice->len - 1; j >= 0; j--) {
+      printf("%d", *(slice->values + j));
+    }
+    printf("\n");
+
+    freeSlice(slice);
   }
 }
