@@ -1,0 +1,16 @@
+version: "3"
+
+tasks:
+  build:
+    cmds:
+      - gcc -o main main.c ./src/hashtable/hashtable.c ./src/utils/utils.c ./src/priority-queue/priority-queue.c ./src/tree/tree.c ./src/slice/slice.c.c
+  archive:
+    deps: [build]
+    cmds:
+      - go run huffman-tester/main.go generate -s 1048576
+      - ./main
+  build_run:
+    deps: [build]
+    cmds:
+      - ./main
+
