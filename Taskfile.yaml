@@ -1,13 +1,15 @@
 version: "3"
 
 tasks:
+  genfile:
+    cmds:
+      - go run huffman-tester/main.go generate -s 1048576
   build:
     cmds:
       - gcc -o main main.c ./src/hashtable/hashtable.c ./src/utils/utils.c ./src/priority-queue/priority-queue.c ./src/tree/tree.c ./src/slice/slice.c
   archive:
-    deps: [build]
+    deps: [genfile, build]
     cmds:
-      - go run huffman-tester/main.go generate -s 1048576
       - ./main
   build_run:
     deps: [build]

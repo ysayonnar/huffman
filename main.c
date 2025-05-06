@@ -1,6 +1,7 @@
 #include "src/hashtable/hashtable.h"
 #include "src/priority-queue/priority-queue.h"
 #include "src/tree/tree.h"
+#include "stdint.h"
 #include "stdio.h"
 #include "stdlib.h"
 
@@ -28,7 +29,6 @@ int createCode(TreeNode *node, Slice *slice, int code) {
 
 int main() {
   FILE *file = fopen(PATH_TO_FILE, "r");
-
   if (file == NULL) {
     perror("Error while opening file");
     return 1;
@@ -91,7 +91,43 @@ int main() {
       printf("%d", *(slice->values + j));
     }
     printf("\n");
-
-    freeSlice(slice);
   }
+
+  FILE *archivedFile = fopen("archived.huf", "wb");
+  if (archivedFile == NULL) {
+    perror("Error while opening file");
+    return 1;
+  }
+
+  FILE *readFile = fopen(PATH_TO_FILE, "r");
+  if (readFile == NULL) {
+    perror("Error while opening file");
+    return 1;
+  }
+
+  uint8_t bytesBuffer = 0;
+  int bitcount = 0;
+  int symbol;
+  while ((symbol = fgetc(readFile)) != EOF) {
+    Slice *slice;
+    int isFound = getTableArray(&codesTable, symbol, &slice);
+    if (!isFound) {
+      continue;
+    }
+
+    for (int i = slice->len - 1; i >= 0; i--) {
+      int bit = *(slice->values + i);
+      bytesBuffer = (bytesBuffer << 1) | (bit & 1);
+      bitcount++;
+
+      if (bitcount == 8) {
+        fwrite(&bytesBuffer, sizeof(uint8_t), 1, archivedFile);
+        bytesBuffer = 0;
+        bitcount = 0;
+      }
+    }
+  }
+
+  fclose(readFile);
+  fclose(archivedFile);
 }
