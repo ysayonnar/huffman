@@ -1,6 +1,7 @@
 #include "functions.h"
 #include "../priority-queue/priority-queue.h"
 #include "stdint.h"
+#include "stdlib.h"
 
 void Decode(char *inputFilename, char *outputFilename) {
   // TODO: implement
@@ -17,6 +18,7 @@ void Encode(char *inputFilename, char *outputFilename) {
   fclose(inputFile);
 
   TreeNode *huffmanTree = createHuffmanTree(frequencyTable);
+
   HashTableArray *huffmanCodes =
       createHuffmanCodes(huffmanTree, frequencyTable);
 
@@ -25,9 +27,10 @@ void Encode(char *inputFilename, char *outputFilename) {
     perror("File does not exists!!!");
     return;
   }
+  rewind(inputFile);
 
   FILE *outputFile = fopen(outputFilename, "wb");
-  if (inputFile == NULL) {
+  if (outputFile == NULL) {
     perror("Error while opening file");
     return;
   }
@@ -39,7 +42,7 @@ void Encode(char *inputFilename, char *outputFilename) {
 }
 
 HashTable *calculateFrequency(FILE *file) {
-  HashTable *ht;
+  HashTable *ht = (HashTable *)malloc(sizeof(HashTable));
   initTable(ht);
 
   int ch;
@@ -102,7 +105,7 @@ int createCode(TreeNode *node, Slice *slice, int code) {
 
 HashTableArray *createHuffmanCodes(TreeNode *huffmanTree,
                                    HashTable *frequencyTable) {
-  HashTableArray *codesTable;
+  HashTableArray *codesTable = (HashTableArray *)malloc(sizeof(HashTableArray));
   initTableArray(codesTable);
 
   for (int i = 0; i < 256; i++) {
