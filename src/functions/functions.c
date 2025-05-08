@@ -35,6 +35,9 @@ void Encode(char *inputFilename, char *outputFilename) {
     return;
   }
 
+  writeHeader(huffmanCodes, inputFile, outputFile);
+  rewind(inputFile); // return pointer to the beginning of file
+
   writeEncoded(inputFile, outputFile, huffmanCodes);
 
   fclose(inputFile);
@@ -123,6 +126,73 @@ HashTableArray *createHuffmanCodes(TreeNode *huffmanTree,
   return codesTable;
 }
 
+int calculatePaddingBits(FILE *sourceFile, HashTableArray *codes) {
+  uint8_t bytesBuffer = 0;
+  int bitcount = 0;
+  int symbol;
+  while ((symbol = fgetc(sourceFile)) != EOF) {
+    Slice *slice;
+    int isFound = getTableArray(codes, symbol, &slice);
+    if (!isFound) {
+      continue;
+    }
+
+    for (int i = slice->len - 1; i >= 0; i--) {
+      int bit = *(slice->values + i);
+      bytesBuffer = (bytesBuffer << 1) | (bit & 1);
+      bitcount++;
+
+      if (bitcount == 8) {
+        bytesBuffer = 0;
+        bitcount = 0;
+      }
+    }
+  }
+
+  if (bitcount != 0) {
+    return 8 - bitcount;
+  }
+
+  return 0;
+}
+
+void writeHeader(HashTableArray *codes, FILE *inputFile, FILE *outputFile) {
+  // paddingbits(1 int), sizeoftable(int) = symbolsAmount * (symbol +
+  // length(int) + n * char)
+
+  int paddingbits = calculatePaddingBits(inputFile, codes);
+  fwrite(&paddingbits, sizeof(int), 1, outputFile);
+
+  int headerSize = 0;
+  for (int i = 0; i < 256; i++) {
+    Slice *code;
+    if (!getTableArray(codes, i, &code)) {
+      continue;
+    }
+    headerSize++;              // symbol
+    headerSize += sizeof(int); // length of code
+    headerSize += code->len;   // code
+  }
+
+  fwrite(&headerSize, sizeof(int), 1, outputFile);
+
+  for (int i = 0; i < 256; i++) {
+    Slice *code;
+    if (!getTableArray(codes, i, &code)) {
+      continue;
+    }
+
+    char symbol = i;
+    fwrite(&symbol, sizeof(char), 1, outputFile);
+    fwrite(&code->len, sizeof(int), 1, outputFile);
+
+    for (int j = code->len - 1; j >= 0; j--) {
+      char s = *(code->values + j);
+      fwrite(&s, sizeof(char), 1, outputFile);
+    }
+  }
+}
+
 void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes) {
   uint8_t bytesBuffer = 0;
   int bitcount = 0;
@@ -146,5 +216,9 @@ void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes) {
       }
     }
   }
-  // TODO: padding bits issue
+
+  if (bitcount != 0) {
+    bytesBuffer = bytesBuffer << (8 - bitcount);
+    fwrite(&bytesBuffer, sizeof(uint8_t), 1, outputFile);
+  }
 }
