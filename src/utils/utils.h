@@ -3,5 +3,6 @@
 
 void clearBuffer();
 int strLength(char *str);
+int inputNumber(char *message, int min, int max);
 
 #endif

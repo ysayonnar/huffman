@@ -14,7 +14,8 @@ HashTable *calculateFrequency(FILE *file);
 TreeNode *createHuffmanTree(HashTable *ht);
 HashTableArray *createHuffmanCodes(TreeNode *huffmanTree,
                                    HashTable *frequencyTable);
-void writeHeader(HashTableArray *codes, FILE *inputFile, FILE *outputFile);
+void writeHeader(HashTableArray *codes, TreeNode *huffmanTree, FILE *inputFile,
+                 FILE *outputFile);
 void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes);
 
 #endif

@@ -2,9 +2,83 @@
 #include "../priority-queue/priority-queue.h"
 #include "stdint.h"
 #include "stdlib.h"
+#include <stdio.h>
+
+TreeNode *buildHuffmanTree(FILE *in) {
+  int marker = fgetc(in);
+  if (marker == EOF) {
+    return NULL;
+  }
+
+  if (marker == '1') {
+    int symbol = fgetc(in);
+    if (symbol == EOF) {
+      return NULL;
+    }
+
+    return newTreeNode(symbol);
+
+  } else if (marker == '0') {
+    TreeNode *left = buildHuffmanTree(in);
+    TreeNode *right = buildHuffmanTree(in);
+    if (!left || !right) {
+      return NULL;
+    }
+
+    TreeNode *node = newTreeNode(-1);
+    node->left = left;
+    node->right = right;
+    return node;
+  } else {
+    fprintf(stderr, "Invalid tree marker: %c\n", marker);
+    return NULL;
+  }
+}
 
 void Decode(char *inputFilename, char *outputFilename) {
-  // TODO: implement
+  FILE *inputFile = fopen(inputFilename, "rb");
+  if (inputFile == NULL) {
+    perror("File does not exists!!!");
+    return;
+  }
+
+  int paddingbits;
+  fread(&paddingbits, sizeof(int), 1, inputFile);
+
+  TreeNode *huffmanTree = buildHuffmanTree(inputFile);
+
+  FILE *outputFile = fopen(outputFilename, "w");
+  if (outputFile == NULL) {
+    perror("Error while creating output file");
+    return;
+  }
+
+  TreeNode *current = huffmanTree;
+  uint8_t byte;
+  int bit_counter = 0;
+  while (fread(&byte, 1, 1, inputFile) == 1) {
+    for (int i = 7; i >= 0; i--) {
+      int bit = (byte >> i) & 1;
+      if (bit == 0) {
+        current = current->left;
+      } else {
+        current = current->right;
+      }
+
+      if (current == NULL) {
+        i = -1;
+        continue;
+      }
+
+      if (current->value != -1) {
+        fputc(current->value, outputFile);
+        current = huffmanTree;
+      }
+    }
+  }
+
+  fclose(inputFile);
+  fclose(outputFile);
 }
 
 void Encode(char *inputFilename, char *outputFilename) {
@@ -35,7 +109,7 @@ void Encode(char *inputFilename, char *outputFilename) {
     return;
   }
 
-  writeHeader(huffmanCodes, inputFile, outputFile);
+  writeHeader(huffmanCodes, huffmanTree, inputFile, outputFile);
   rewind(inputFile); // return pointer to the beginning of file
 
   writeEncoded(inputFile, outputFile, huffmanCodes);
@@ -156,41 +230,27 @@ int calculatePaddingBits(FILE *sourceFile, HashTableArray *codes) {
   return 0;
 }
 
-void writeHeader(HashTableArray *codes, FILE *inputFile, FILE *outputFile) {
-  // paddingbits(1 int), sizeoftable(int) = symbolsAmount * (symbol +
-  // length(int) + n * char)
+void writeHuffmanTree(FILE *outputFile, TreeNode *node) {
+  if (node == NULL) {
+    return;
+  }
 
+  if (node->left == NULL && node->right == NULL) {
+    fputc('1', outputFile);
+    fputc(node->value, outputFile);
+  } else {
+    fputc('0', outputFile);
+    writeHuffmanTree(outputFile, node->left);
+    writeHuffmanTree(outputFile, node->right);
+  }
+}
+
+void writeHeader(HashTableArray *codes, TreeNode *huffmanTree, FILE *inputFile,
+                 FILE *outputFile) {
   int paddingbits = calculatePaddingBits(inputFile, codes);
   fwrite(&paddingbits, sizeof(int), 1, outputFile);
 
-  int headerSize = 0;
-  for (int i = 0; i < 256; i++) {
-    Slice *code;
-    if (!getTableArray(codes, i, &code)) {
-      continue;
-    }
-    headerSize++;              // symbol
-    headerSize += sizeof(int); // length of code
-    headerSize += code->len;   // code
-  }
-
-  fwrite(&headerSize, sizeof(int), 1, outputFile);
-
-  for (int i = 0; i < 256; i++) {
-    Slice *code;
-    if (!getTableArray(codes, i, &code)) {
-      continue;
-    }
-
-    char symbol = i;
-    fwrite(&symbol, sizeof(char), 1, outputFile);
-    fwrite(&code->len, sizeof(int), 1, outputFile);
-
-    for (int j = code->len - 1; j >= 0; j--) {
-      char s = *(code->values + j);
-      fwrite(&s, sizeof(char), 1, outputFile);
-    }
-  }
+  writeHuffmanTree(outputFile, huffmanTree);
 }
 
 void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes) {
