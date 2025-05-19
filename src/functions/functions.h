@@ -6,6 +6,7 @@
 #include "stdio.h"
 
 #define MAX_FILENAME_LENGTH 100
+#define SIGNATURE "HUFF"
 
 void Decode(char *inputFilename, char *outputFilename);
 void Encode(char *inputFilename, char *outputFilename);
@@ -16,6 +17,7 @@ HashTableArray *createHuffmanCodes(TreeNode *huffmanTree,
                                    HashTable *frequencyTable);
 void writeHeader(HashTableArray *codes, TreeNode *huffmanTree, FILE *inputFile,
                  FILE *outputFile);
+int checkSignature(FILE *inputFile);
 void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes);
 
 #endif

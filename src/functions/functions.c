@@ -2,6 +2,7 @@
 #include "../priority-queue/priority-queue.h"
 #include "stdint.h"
 #include "stdlib.h"
+#include "string.h"
 #include <stdio.h>
 
 TreeNode *buildHuffmanTree(FILE *in) {
@@ -38,26 +39,53 @@ TreeNode *buildHuffmanTree(FILE *in) {
 void Decode(char *inputFilename, char *outputFilename) {
   FILE *inputFile = fopen(inputFilename, "rb");
   if (inputFile == NULL) {
-    perror("File does not exists!!!");
+    printf("Source file does not exist, try again\n");
+    return;
+  }
+
+  printf("\nChecking signature...\n");
+  if (!checkSignature(inputFile)) {
+    printf("Unknown format!\n");
+    fclose(inputFile);
     return;
   }
 
   int paddingbits;
   fread(&paddingbits, sizeof(int), 1, inputFile);
 
+  printf("Building huffman tree from service header...\n");
   TreeNode *huffmanTree = buildHuffmanTree(inputFile);
 
   FILE *outputFile = fopen(outputFilename, "w");
   if (outputFile == NULL) {
-    perror("Error while creating output file");
+    perror("Unexpected error while creating output file\n");
+    fclose(inputFile);
     return;
   }
 
+  printf("Decoding data...\n");
+
+  long dataStart = ftell(inputFile);
+
+  fseek(inputFile, 0, SEEK_END);
+  long fileEnd = ftell(inputFile);
+  long dataSize = fileEnd - dataStart;
+
+  fseek(inputFile, dataStart, SEEK_SET);
+
   TreeNode *current = huffmanTree;
   uint8_t byte;
-  int bit_counter = 0;
+  long bytesRead = 0;
+
   while (fread(&byte, 1, 1, inputFile) == 1) {
-    for (int i = 7; i >= 0; i--) {
+    bytesRead++;
+
+    int bitsToRead = 8;
+    if (bytesRead == dataSize) {
+      bitsToRead = 8 - paddingbits;
+    }
+
+    for (int i = 7; i >= 8 - bitsToRead; i--) {
       int bit = (byte >> i) & 1;
       if (bit == 0) {
         current = current->left;
@@ -66,8 +94,7 @@ void Decode(char *inputFilename, char *outputFilename) {
       }
 
       if (current == NULL) {
-        i = -1;
-        continue;
+        break; // или continue, если есть проверка
       }
 
       if (current->value != -1) {
@@ -77,45 +104,59 @@ void Decode(char *inputFilename, char *outputFilename) {
     }
   }
 
+  printf("File unpacked!\n");
+
   fclose(inputFile);
   fclose(outputFile);
+  freeTree(huffmanTree);
 }
 
 void Encode(char *inputFilename, char *outputFilename) {
   FILE *inputFile = fopen(inputFilename, "r");
   if (inputFile == NULL) {
-    perror("File does not exists!!!");
+    printf("Source file does not exists, try again\n");
     return;
   }
 
+  printf("\nCalculating frequency of symbols...\n");
   HashTable *frequencyTable = calculateFrequency(inputFile);
   fclose(inputFile);
 
+  printf("Building huffman tree...\n");
   TreeNode *huffmanTree = createHuffmanTree(frequencyTable);
 
+  printf("Creating huffman codes based on tree...\n");
   HashTableArray *huffmanCodes =
       createHuffmanCodes(huffmanTree, frequencyTable);
 
   inputFile = fopen(inputFilename, "r");
   if (inputFile == NULL) {
-    perror("File does not exists!!!");
+    perror("Unexpected error while opening source file\n");
     return;
   }
   rewind(inputFile);
 
   FILE *outputFile = fopen(outputFilename, "wb");
   if (outputFile == NULL) {
-    perror("Error while opening file");
+    perror("Unexpected error while creating output file\n");
     return;
   }
 
+  printf("Writing service header to the output file...\n");
   writeHeader(huffmanCodes, huffmanTree, inputFile, outputFile);
-  rewind(inputFile); // return pointer to the beginning of file
+  rewind(inputFile); // returns pointer to the beginning of file
 
+  printf("Compressing data...\n");
   writeEncoded(inputFile, outputFile, huffmanCodes);
 
   fclose(inputFile);
   fclose(outputFile);
+
+  free(frequencyTable);
+  free(huffmanCodes);
+  freeTree(huffmanTree);
+
+  printf("File archived!\n");
 }
 
 HashTable *calculateFrequency(FILE *file) {
@@ -245,8 +286,25 @@ void writeHuffmanTree(FILE *outputFile, TreeNode *node) {
   }
 }
 
+int checkSignature(FILE *inputFile) {
+  char buffer[4];
+
+  size_t read = fread(buffer, 1, 4, inputFile);
+  if (read != 4) {
+    return 0;
+  }
+
+  if (memcmp(buffer, SIGNATURE, 4) == 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 void writeHeader(HashTableArray *codes, TreeNode *huffmanTree, FILE *inputFile,
                  FILE *outputFile) {
+  fwrite(SIGNATURE, sizeof(char), strlen(SIGNATURE), outputFile);
+
   int paddingbits = calculatePaddingBits(inputFile, codes);
   fwrite(&paddingbits, sizeof(int), 1, outputFile);
 
