@@ -19,5 +19,6 @@ void writeHeader(HashTableArray *codes, TreeNode *huffmanTree, FILE *inputFile,
                  FILE *outputFile);
 int checkSignature(FILE *inputFile);
 void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes);
+float calculateCompression(char *inputFilename, char *outputFilename);
 
 #endif

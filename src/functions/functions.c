@@ -156,7 +156,8 @@ void Encode(char *inputFilename, char *outputFilename) {
   free(huffmanCodes);
   freeTree(huffmanTree);
 
-  printf("File archived!\n");
+  float k = calculateCompression(inputFilename, outputFilename);
+  printf("\nThe compressed file size is %.2f%% of the original!\n", k * 100.0f);
 }
 
 HashTable *calculateFrequency(FILE *file) {
@@ -339,4 +340,34 @@ void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes) {
     bytesBuffer = bytesBuffer << (8 - bitcount);
     fwrite(&bytesBuffer, sizeof(uint8_t), 1, outputFile);
   }
+}
+
+float calculateCompression(char *inputFilename, char *outputFilename) {
+  FILE *inputFile = fopen(inputFilename, "r");
+  if (inputFilename == NULL) {
+    perror("Unexpected error");
+    return 0;
+  }
+
+  FILE *outputFile = fopen(outputFilename, "rb");
+  if (outputFile == NULL) {
+    perror("Unexpected error");
+    return 0;
+  }
+
+  fseek(inputFile, 0, SEEK_END);
+  long inputSize = ftell(inputFile);
+  fclose(inputFile);
+
+  fseek(outputFile, 0, SEEK_END);
+  long outputSize = ftell(outputFile);
+  fclose(outputFile);
+
+  if (inputSize == 0) {
+    return 0;
+  }
+
+  float compression = ((float)outputSize / (float)inputSize);
+
+  return compression;
 }
