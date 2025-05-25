@@ -6,7 +6,7 @@ tasks:
       - go run huffman-tester/main.go generate -s 1048576
   build:
     cmds:
-      - gcc -o main main.c ./src/hashtable/hashtable.c ./src/utils/utils.c ./src/priority-queue/priority-queue.c ./src/tree/tree.c ./src/slice/slice.c ./src/functions/functions.c
+      - gcc -o main main.c ./src/hashtable/hashtable.c ./src/priority-queue/priority-queue.c ./src/tree/tree.c ./src/slice/slice.c ./src/functions/functions.c
   archive:
     deps: [genfile, build]
     cmds:

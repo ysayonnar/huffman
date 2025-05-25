@@ -1,5 +1,4 @@
 #include "src/functions/functions.h"
-#include "src/utils/utils.h"
 #include <stdio.h>
 
 int main() {

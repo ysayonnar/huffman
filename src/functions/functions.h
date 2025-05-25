@@ -21,4 +21,8 @@ int checkSignature(FILE *inputFile);
 void writeEncoded(FILE *sourceFile, FILE *outputFile, HashTableArray *codes);
 float calculateCompression(char *inputFilename, char *outputFilename);
 
+void clearBuffer();
+int strLength(char *str);
+int inputNumber(char *message, int min, int max);
+
 #endif
