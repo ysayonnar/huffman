@@ -5,7 +5,7 @@ int main() {
   int option = -1;
 
   while (option != 0) {
-    printf("\n~~~~~HUFFMAN ARCHIVER~~~~~\n");
+    printf("\e[0;34m\n~~~~~HUFFMAN ARCHIVER~~~~~\n\e[0;37m");
     printf("OPTIONS:\n\t1 - archive file\n\t2 - unarchive file\n\t0 - quit\n");
     int option = inputNumber("Option: ", 0, 2);
 

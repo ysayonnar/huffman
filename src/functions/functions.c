@@ -157,7 +157,9 @@ void Encode(char *inputFilename, char *outputFilename) {
   freeTree(huffmanTree);
 
   float k = calculateCompression(inputFilename, outputFilename);
-  printf("\nThe compressed file size is %.2f%% of the original!\n", k * 100.0f);
+  printf(
+      "\nThe compressed file size is \e[0;32m%.2f%%\e[0;37m of the original!\n",
+      k * 100.0f);
 }
 
 HashTable *calculateFrequency(FILE *file) {
